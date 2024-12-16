@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Amannigam1820/hr-dashboard-golang/database"
@@ -251,7 +252,8 @@ func Logout(c *fiber.Ctx) error {
 }
 func GetUserInfo(c *fiber.Ctx) error {
 	user, ok := c.Locals("user").(model.Hr)
-	//fmt.Println("user :", user, "ok :", ok)
+	fmt.Println("user :", user, "ok :", ok)
+
 	if !ok {
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

@@ -57,6 +57,8 @@ func RoleCheck(roles ...string) fiber.Handler {
 			}
 		}
 
+		fmt.Println(userRole)
+
 		// If role does not match, deny access
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Forbidden - You do not have the required permissions",

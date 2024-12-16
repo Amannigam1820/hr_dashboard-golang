@@ -32,7 +32,7 @@ func UploadToCloudinary(file multipart.File) (string, error) {
 	uploadResult, err := CloudinaryClient.Upload.Upload(context.Background(), file, uploader.UploadParams{
 		Folder:       "employee_resume_pdf",
 		PublicID:     uniqueID,
-		ResourceType: "raw",
+		ResourceType: "auto",
 		//AccessControlAllowOrigin:"*",
 
 	})
