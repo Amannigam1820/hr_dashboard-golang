@@ -238,6 +238,12 @@ func UpdateEmployee(c *fiber.Ctx) error {
 			"sytemErr": err,
 		})
 	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Unable to parse multipart form")
+	}
+
 	var existingEmployee model.Employee
 	if result := database.DBConn.First(&existingEmployee, id); result.Error != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -287,6 +293,23 @@ func UpdateEmployee(c *fiber.Ctx) error {
 	}
 	if employee.Address != "" {
 		existingEmployee.Address = employee.Address
+	}
+
+	if len(form.File["resume"]) > 0 {
+		file := form.File["resume"][0] // *multipart.FileHeader
+		f, err := file.Open()          // Open the file to get a multipart.File (the content of the file)
+		if err != nil {
+			log.Println("Error opening resume file:", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to open resume file")
+		}
+		url, err := config.UploadToCloudinary(f) // Pass the file content to UploadToCloudinary
+		if err != nil {
+			log.Println("Error uploading resume:", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to upload resume")
+		}
+		existingEmployee.Resume = url
+		//employee.Resume = url
+		defer f.Close() // Don't forget to close the file after usage
 	}
 
 	//fmt.Println(&existingEmployee.YearsOfExperience)
