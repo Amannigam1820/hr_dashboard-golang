@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/Amannigam1820/hr-dashboard-golang/config"
@@ -239,10 +240,7 @@ func UpdateEmployee(c *fiber.Ctx) error {
 		})
 	}
 
-	form, err := c.MultipartForm()
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Unable to parse multipart form")
-	}
+	//fmt.Println(employee)
 
 	var existingEmployee model.Employee
 	if result := database.DBConn.First(&existingEmployee, id); result.Error != nil {
@@ -251,6 +249,33 @@ func UpdateEmployee(c *fiber.Ctx) error {
 			"message": "Employee Record not found",
 		})
 	}
+
+	file, err := c.FormFile("resume")
+	fmt.Println("filereror", file, err)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Unable to get the file",
+			"err":   err,
+		})
+	}
+	fileContent, err := file.Open()
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error opening file",
+		})
+	}
+	defer fileContent.Close()
+
+	// Upload the file to Cloudinary
+	resumeURL, err := config.UploadToCloudinary(fileContent)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": fmt.Sprintf("Failed to upload to Cloudinary: %v", err),
+		})
+	}
+
+	// Store the Cloudinary URL in the user struct
+	existingEmployee.Resume = resumeURL
 	if employee.Name != "" {
 		existingEmployee.Name = employee.Name
 	}
@@ -294,25 +319,6 @@ func UpdateEmployee(c *fiber.Ctx) error {
 	if employee.Address != "" {
 		existingEmployee.Address = employee.Address
 	}
-
-	if len(form.File["resume"]) > 0 {
-		file := form.File["resume"][0] // *multipart.FileHeader
-		f, err := file.Open()          // Open the file to get a multipart.File (the content of the file)
-		if err != nil {
-			log.Println("Error opening resume file:", err)
-			return fiber.NewError(fiber.StatusInternalServerError, "Failed to open resume file")
-		}
-		url, err := config.UploadToCloudinary(f) // Pass the file content to UploadToCloudinary
-		if err != nil {
-			log.Println("Error uploading resume:", err)
-			return fiber.NewError(fiber.StatusInternalServerError, "Failed to upload resume")
-		}
-		existingEmployee.Resume = url
-		//employee.Resume = url
-		defer f.Close() // Don't forget to close the file after usage
-	}
-
-	//fmt.Println(&existingEmployee.YearsOfExperience)
 
 	if result := database.DBConn.Save(&existingEmployee); result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
