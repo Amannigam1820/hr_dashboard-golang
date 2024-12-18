@@ -10,6 +10,7 @@ func SetupEmployeeRoutes(app *fiber.App) {
 	employeeGroup := app.Group("/api/employee")
 
 	employeeGroup.Post("/", middleware.RoleCheck("Hr-Admin", "Super-Admin"), controller.CreateEmployee)
+	employeeGroup.Get("/techstack", middleware.RoleCheck("Hr-Admin", "Super-Admin"), controller.GetAllTechStackCategory)
 	employeeGroup.Get("/all", middleware.RoleCheck("Hr-Admin", "Super-Admin", "Employee"), controller.GetAllEmployee)
 	employeeGroup.Get("/my-profile", middleware.IsAuthenticated(), controller.GetMyProfile)
 	employeeGroup.Get("/stats", middleware.RoleCheck("Hr-Admin", "Super-Admin"), controller.GetEmployeeStats)

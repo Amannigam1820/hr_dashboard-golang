@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Amannigam1820/hr-dashboard-golang/config"
 	"github.com/Amannigam1820/hr-dashboard-golang/database"
 	"github.com/Amannigam1820/hr-dashboard-golang/model"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -97,6 +99,42 @@ func CreateEmployee(c *fiber.Ctx) error {
 		"success": "true",
 		"message": "Hr Created SuccessFully",
 		"Hr":      employee,
+	})
+}
+func GetAllTechStackCategory(c *fiber.Ctx) error {
+	var employees []model.Employee
+	var techStacks []string
+
+	// Fetch all tech stacks from the employees table
+	if result := database.DBConn.Model(&model.Employee{}).Pluck("tech_stack", &employees); result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to retrieve employee tech stacks",
+		})
+	}
+
+	// Iterate over the employees and split the tech stacks by commas (for comma-separated values)
+	for _, employee := range employees {
+		// Assuming tech_stack is a comma-separated string like "MERN,Golang"
+		techStacks = append(techStacks, strings.Split(employee.TechStack, ",")...)
+	}
+
+	// Create a map to track unique tech stacks
+	uniqueTechStacks := make(map[string]bool)
+
+	// Loop through the tech stacks and add them to the map (this will ensure uniqueness)
+	var resultTechStacks []string
+	for _, stack := range techStacks {
+		if !uniqueTechStacks[stack] {
+			uniqueTechStacks[stack] = true
+			resultTechStacks = append(resultTechStacks, stack)
+		}
+	}
+
+	// Return the response with the unique tech stacks
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tech-satck": resultTechStacks,
+		"success":    true,
 	})
 }
 
