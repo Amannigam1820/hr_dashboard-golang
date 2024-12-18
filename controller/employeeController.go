@@ -133,8 +133,33 @@ func GetAllTechStackCategory(c *fiber.Ctx) error {
 
 	// Return the response with the unique tech stacks
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"tech-satck": resultTechStacks,
+		"tech-stack": resultTechStacks,
 		"success":    true,
+	})
+}
+func GetEmployeeByTechStack(c *fiber.Ctx) error {
+	// Retrieve the tech stack from the query parameters
+	techStack := c.Query("techstack")
+	if techStack == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Tech stack query parameter is required",
+		})
+	}
+
+	var employees []model.Employee
+	// Find employees that match the tech stack in the tech_stack column
+	if result := database.DBConn.Where("tech_stack LIKE ?", "%"+techStack+"%").Find(&employees); result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to retrieve Employee records",
+		})
+	}
+
+	// Return the filtered employee list
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    employees,
+		"success": true,
 	})
 }
 
